@@ -1,11 +1,11 @@
-# UG Medical Question Bank
-5,296 written, viva and skill-station prompts generated from the 2,949 competencies of the MCI/NMC Competency Based UG Curriculum (2018, Vols I-III). Prompts carry no answer key; each cites its source code and page.
+# UG Medical Question Bank (NMC CBME 2024)
+4,850 written, viva and skill-station prompts generated from the 2,624 competencies of the NMC **Competency Based Medical Education Curriculum 2024** (re-issued 12/09/2024), each tagged with how it changed from the 2018 curriculum (New / Reworded / Minor edit / Unchanged). Prompts carry no answer key; each cites its source code and PDF page. In effect there is one distinct question per competency; the written/viva/skill variants reuse the same wording.
 
 - `public/` static site (no build step), `public/questions.json` data
-- `data/competencies.csv|jsonl` cleaned competency dataset; `docs/DATA_ASSESSMENT.md` quality report
-- Deploy: `vercel --prod` (outputDirectory is `public`)
+- `data/competencies_2024.*` cleaned 2024 dataset (primary); `data/competencies_2018.*` 2018 dataset (subject labels fixed); `data/integration_links_2018.csv`
+- `data/comparison_2018_vs_2024.csv` pair-by-pair comparison (matched, removed, new)
+- `docs/COMPARISON_2018_vs_2024.md` comparison and extraction audit; `docs/DATA_ASSESSMENT.md` 2018 data assessment
+- `scripts/` parsing and question-generation code. Regenerate questions: `python3 scripts/make_questions.py`
+- Deploy: static, `outputDirectory` = `public`
 
-## Coverage audit (vs source PDFs)
-Cross-checked against every code in the PDF text and each topic's stated "Number of competencies": 2,949 unique competencies captured.
-Not present in the PDFs themselves (numbered but absent): PA22.3, SU26.2, FM2.15. 17 rows were transcribed manually from page images (`qc_flags` = `manual_transcription`) and a few source code typos were normalised (e.g. `PF27.21` -> `PE27.21`, `PA 17.1`, `CM 20.3`).
-Regenerate questions: `python3 scripts/make_questions.py`.
+Source: *NMC Compendium 2024, Vol. 2 (Curriculum)*, pp. 472-938. The 31/08/2024 guidelines (pp. 1-470) were withdrawn on 05/09/2024 and are not used.
