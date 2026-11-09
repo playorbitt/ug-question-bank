@@ -35,3 +35,9 @@
 - n_procedures_to_certify only populated for 37 rows; certifiable procedures are otherwise listed in separate tables not modelled here.
 - Counts per topic header ("Number of competencies") were not reconciled against parsed counts.
 - Competency IDs with letter suffixes or odd formats were parsed with a generic pattern; a few may be missed.
+
+## Update: coverage audit (second pass)
+First pass captured 2,893 codes; an audit against the PDFs found 56 more, now included (total 2,949 unique competencies).
+Causes: indented rows missed by the row detector; domain/level typos in the source ("A and C", "KH /", "K/H"); codes split across lines or mistyped ("PE27 1", "PA 17.1", "PA`18.2", "PF27.21"); 17 rows with garbled text layers transcribed from page images.
+Verified against each topic's stated competency count. Genuinely absent from the PDFs: PA22.3, SU26.2, FM2.15.
+Corrections to figures above: 5,296 questions (2,949 competencies); the spurious `PF` row is now PE27.21.
