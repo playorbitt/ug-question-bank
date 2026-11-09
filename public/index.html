@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UG Medical Question Bank</title>
+<meta name="description" content="Searchable written, viva and skill-station prompts generated from the 2018 competency-based UG medical curriculum.">
+<style>
+:root{--bg:#faf8f4;--card:#fff;--ink:#1d2430;--mute:#667085;--line:#e4e0d8;--acc:#0f6b5c;--accbg:#e3f2ee;--warn:#a15c00}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#13171d;--card:#1b212a;--ink:#e8ebf0;--mute:#98a2b3;--line:#2a323d;--acc:#4fc3ad;--accbg:#18332e;--warn:#e0a24a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 64px}
+h1{font-size:1.5rem;margin:.2em 0 .1em}
+.sub{color:var(--mute);margin:0 0 16px;font-size:.92rem}
+.bar{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:10px}
+input,select,button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:42px}
+input[type=search]{grid-column:1/-1}
+button{cursor:pointer}
+button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.tabs{display:flex;gap:8px;margin:12px 0}
+.tabs button[aria-pressed=true]{background:var(--accbg);border-color:var(--acc);font-weight:600}
+.meta{display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:.9rem;margin:6px 0 10px;gap:8px;flex-wrap:wrap}
+.q{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.q p{margin:0 0 8px;font-size:1.02rem}
+.tags{display:flex;gap:6px;flex-wrap:wrap;font-size:.78rem;color:var(--mute)}
+.tag{border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.tag.type{background:var(--accbg);border-color:transparent;color:var(--acc);font-weight:600}
+.tag.core{color:var(--warn)}
+.src{font-size:.8rem;color:var(--mute);margin-top:8px}
+.star{float:right;border:none;background:none;font-size:1.3rem;min-height:0;padding:0 4px;color:var(--mute)}
+.star[aria-pressed=true]{color:#d9a400}
+.more{width:100%;margin-top:6px}
+.card-big{padding:28px 22px;text-align:left}
+.card-big p{font-size:1.25rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.hide{display:none}
+.empty{text-align:center;color:var(--mute);padding:40px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>UG Medical Question Bank</h1>
+  <p class="sub">Written, viva and skill-station prompts generated from each competency in the 2018 competency-based UG curriculum (Vols I–III). Prompts have no answer key; every item cites its source competency and page.</p>
+
+  <div class="bar" role="search">
+    <input type="search" id="s" placeholder="Search questions, topics or codes (e.g. AN2.4, heart failure)" aria-label="Search">
+    <select id="subj" aria-label="Subject"><option value="">All subjects</option></select>
+    <select id="type" aria-label="Type"><option value="">All types</option><option>Written</option><option>Viva</option><option>Practical/Skill</option></select>
+    <select id="lvl" aria-label="Competency level"><option value="">All levels</option><option value="K">Knows</option><option value="KH">Knows how</option><option value="S">Shows</option><option value="SH">Shows how</option><option value="P">Performs</option></select>
+    <select id="core" aria-label="Core"><option value="">Core + non-core</option><option value="1">Core only</option><option value="0">Non-core only</option></select>
+    <select id="mark" aria-label="Saved"><option value="">All questions</option><option value="1">Starred only</option></select>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button id="tBrowse" aria-pressed="true">Browse</button>
+    <button id="tPractice" aria-pressed="false">Practice</button>
+  </div>
+
+  <div id="browse">
+    <div class="meta"><span id="count"></span><button id="csv">Download filtered CSV</button></div>
+    <div id="list"></div>
+    <button class="more hide" id="more">Show more</button>
+  </div>
+
+  <div id="practice" class="hide">
+    <div class="meta"><span id="pcount"></span></div>
+    <div class="q card-big" id="pcard"></div>
+    <div class="row">
+      <button class="primary" id="next">Next random question</button>
+      <button id="pstar" aria-pressed="false">☆ Star</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+let Q=[],F=[],shown=0,cur=null;const PAGE=40;
+let stars=new Set();
+try{stars=new Set(JSON.parse(localStorage.getItem('qb-stars')||'[]'))}catch(e){}
+const save=()=>{try{localStorage.setItem('qb-stars',JSON.stringify([...stars]))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function card(q){
+  const on=stars.has(q.id);
+  return `<article class="q"><button class="star" data-id="${q.id}" aria-pressed="${on}" aria-label="Star question">${on?'★':'☆'}</button>
+  <p>${esc(q.q)}</p>
+  <div class="tags"><span class="tag type">${esc(q.type)}</span><span class="tag">${esc(q.subject)}</span><span class="tag">${esc(q.levelName)}</span>${q.core?'<span class="tag core">Core</span>':'<span class="tag">Non-core</span>'}</div>
+  <div class="src">${esc(q.code)} · ${esc(q.topic||'')} · Vol ${q.vol}, p.${q.page}${q.tl?' · '+esc(q.tl):''}</div></article>`;
+}
+function apply(){
+  const t=$('s').value.trim().toLowerCase(),su=$('subj').value,ty=$('type').value,lv=$('lvl').value,co=$('core').value,mk=$('mark').value;
+  F=Q.filter(q=>(!su||q.subj===su)&&(!ty||q.type===ty)&&(!lv||q.level===lv)&&(co===''||String(q.core)===co)&&(!mk||stars.has(q.id))&&
+    (!t||(q.q+' '+q.topic+' '+q.code+' '+q.subject).toLowerCase().includes(t)));
+  shown=0;$('list').innerHTML='';more();
+  $('count').textContent=F.length.toLocaleString()+' of '+Q.length.toLocaleString()+' questions';
+  $('pcount').textContent=F.length.toLocaleString()+' questions in current filter';
+  if(!$('practice').classList.contains('hide'))pick();
+}
+function more(){
+  const chunk=F.slice(shown,shown+PAGE);shown+=chunk.length;
+  $('list').insertAdjacentHTML('beforeend',chunk.map(card).join('')||(shown?'':'<div class="empty">No questions match these filters.</div>'));
+  $('more').classList.toggle('hide',shown>=F.length);
+}
+function pick(){
+  if(!F.length){cur=null;$('pcard').innerHTML='<div class="empty">No questions match these filters.</div>';return}
+  cur=F[Math.floor(Math.random()*F.length)];
+  $('pcard').innerHTML=card(cur).replace(/<button class="star".*?<\/button>/,'').replace('class="q"','');
+  $('pstar').textContent=stars.has(cur.id)?'★ Starred':'☆ Star';$('pstar').setAttribute('aria-pressed',stars.has(cur.id));
+}
+function toggle(id){stars.has(id)?stars.delete(id):stars.add(id);save()}
+$('list').addEventListener('click',e=>{const b=e.target.closest('.star');if(!b)return;toggle(b.dataset.id);const on=stars.has(b.dataset.id);b.textContent=on?'★':'☆';b.setAttribute('aria-pressed',on)});
+$('pstar').onclick=()=>{if(!cur)return;toggle(cur.id);pick_state()};
+function pick_state(){$('pstar').textContent=stars.has(cur.id)?'★ Starred':'☆ Star';$('pstar').setAttribute('aria-pressed',stars.has(cur.id))}
+$('more').onclick=more;$('next').onclick=pick;
+['subj','type','lvl','core','mark'].forEach(i=>$(i).onchange=apply);
+let tm;$('s').oninput=()=>{clearTimeout(tm);tm=setTimeout(apply,150)};
+function tab(p){$('browse').classList.toggle('hide',p);$('practice').classList.toggle('hide',!p);$('tBrowse').setAttribute('aria-pressed',!p);$('tPractice').setAttribute('aria-pressed',p);if(p)pick()}
+$('tBrowse').onclick=()=>tab(false);$('tPractice').onclick=()=>tab(true);
+$('csv').onclick=()=>{
+  const h=['id','code','subject','topic','type','level','core','question','volume','page'];
+  const rows=F.map(q=>[q.id,q.code,q.subject,q.topic,q.type,q.levelName,q.core?'Y':'N',q.q,q.vol,q.page].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+  const blob=new Blob([[h.join(','),...rows].join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='questions.csv';a.click();
+};
+fetch('questions.json').then(r=>r.json()).then(d=>{
+  Q=d;const m=new Map();Q.forEach(q=>m.set(q.subj,q.subject));
+  [...m].sort((a,b)=>a[1].localeCompare(b[1])).forEach(([k,v])=>$('subj').insertAdjacentHTML('beforeend',`<option value="${k}">${esc(v)}</option>`));
+  apply();
+}).catch(()=>{$('list').innerHTML='<div class="empty">Could not load questions.json</div>'});
+})();
+</script>
+</body>
+</html>
